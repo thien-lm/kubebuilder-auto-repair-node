@@ -210,7 +210,6 @@ spec:
         command:
         - /manager
         image: thienlm204608/auto-repair-controller:v1.0.5
-        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
