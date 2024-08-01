@@ -35,7 +35,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/thien-lm/node-autorepair/internal/controller"
+	"github.com/node-autorepair/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 
