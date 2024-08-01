@@ -2,7 +2,7 @@ package utils
 
 import (
 	ctx "context"
-	"fmt"
+	// "fmt"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -33,7 +33,6 @@ func CheckNodeReadyStatusAfterRepairing(node *core.Node, clientSet kubernetes.In
 		for _, condition := range newNodeState.Status.Conditions {
         	if condition.Type == core.NodeReady && condition.Status == core.ConditionTrue {
 				logger.Info("node is healthy now", "node", node.Name)
-				fmt.Println("node is healthy now")
 				time.Sleep(retryDuration)
             	return true
 			}
