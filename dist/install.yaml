@@ -239,3 +239,4 @@ spec:
         runAsNonRoot: true
       serviceAccountName: node-autorepair-controller-manager
       terminationGracePeriodSeconds: 10
+      imagePullPolicy: Always
