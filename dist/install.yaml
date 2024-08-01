@@ -25,42 +25,32 @@ metadata:
   name: node-autorepair-leader-election-role
   namespace: node-autorepair-system
 rules:
-- apiGroups: [""]
-  resources: ["secrets", "configmaps"]
-  verbs: ["get", "list"]
-- apiGroups: ['']
-  resources: [events]
-  verbs: [create, patch, update]
-- apiGroups: ['']
-  resources: [nodes]
-  verbs: [get, watch, list, update, patch]
-- apiGroups: ['']
-  resources: [nodes/status]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ['']
-  resources: [pods]
-  verbs: [get, watch, list, delete]
-- apiGroups: ['']
-  resources: [pods/eviction]
-  verbs: [create]
-- apiGroups: [extensions]
-  resources: [daemonsets]
-  verbs: [get, watch, list]
-- apiGroups: [""]
-  resources: ["endpoints"]
-  verbs: ["get", "list", "update", "create", "patch"]
 - apiGroups:
-  - coordination.k8s.io
+  - ""
   resources:
-  - leases
+  - nodes
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - nodes/status
+  verbs:
+  - get
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -111,6 +101,31 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list"]
+- apiGroups: ['']
+  resources: [events]
+  verbs: [create, patch, update]
+- apiGroups: ['']
+  resources: [nodes]
+  verbs: [get, watch, list, update, patch]
+- apiGroups: ['']
+  resources: [nodes/status]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ['']
+  resources: [pods]
+  verbs: [get, watch, list, delete]
+- apiGroups: ['']
+  resources: [pods/eviction]
+  verbs: [create]
+- apiGroups: [extensions]
+  resources: [daemonsets]
+  verbs: [get, watch, list]
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list", "update", "create", "patch"]
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
