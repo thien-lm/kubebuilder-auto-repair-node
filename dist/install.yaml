@@ -25,18 +25,30 @@ metadata:
   name: node-autorepair-leader-election-role
   namespace: node-autorepair-system
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list"]
+- apiGroups: ['']
+  resources: [events]
+  verbs: [create, patch, update]
+- apiGroups: ['']
+  resources: [nodes]
+  verbs: [get, watch, list, update, patch]
+- apiGroups: ['']
+  resources: [nodes/status]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ['']
+  resources: [pods]
+  verbs: [get, watch, list, delete]
+- apiGroups: ['']
+  resources: [pods/eviction]
+  verbs: [create]
+- apiGroups: [extensions]
+  resources: [daemonsets]
+  verbs: [get, watch, list]
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list", "update", "create", "patch"]
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -49,13 +61,6 @@ rules:
   - update
   - patch
   - delete
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
