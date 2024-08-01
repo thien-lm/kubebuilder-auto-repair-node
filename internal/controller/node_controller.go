@@ -61,7 +61,7 @@ type NodeReconciler struct {
 
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithValues("nodeName", req.Name)
-	logger.Info("-----Reconciling node object-----")
+	logger.Info("-----Reconciling node object-----\n")
 
     node := &corev1.Node{}
     err := r.Get(ctx, req.NamespacedName, node)
@@ -77,10 +77,13 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
     }
 	// if node status is fine, just remove it out of queue and remove annotation 
 	if !utils.GetNodeStatus(node) {
-		if _,err := utils.GetAnnotation(r.Clientset, node, "RebootingSolvedIssue"); err != nil {
+		if _,err := utils.GetAnnotation(r.Clientset, node, "RebootingSolvedIssue"); err == nil {
 			_ = utils.RemoveAnnotation(r.Clientset, node, "RebootingSolvedIssue")
+		}
+		if _,err := utils.GetAnnotation(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair"); err == nil {
 			_ = utils.RemoveAnnotation(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair")
 		}
+		logger.Info("Node status is OK, no need to be handled")
 		return ctrl.Result{}, nil
 	}
 	//TODO: if node in not ready state but not more than 3 minutes, add to queue to process again
@@ -91,12 +94,13 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("trying to reboot node: ", "node" , node.Name)
 		//fetch info to access to vmware platform
 		goVcloudClient, org, vdc, err := vcd.CreateGoVCloudClient(r.Clientset)
+
 		if err != nil {
 			logger.Error(pureError.New("failed to connect"), "failed to connect to vcd")
 			//if the total number times of rebooting is > 3, does not reboot node anymore
 			if totalNumberOfRebooting == 0 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
-			} else if totalNumberOfRebooting <= 3 {
+			} else if totalNumberOfRebooting <= 1 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
 				// if the node was not rebooted more than 3 times, re-enqueue it to process again
 				return ctrl.Result{RequeueAfter: 10*time.Minute}, err
@@ -108,10 +112,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			logger.Error(pureError.New("failed to handle"), "failed to handle not ready node")
 			if totalNumberOfRebooting == 0 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
-			} else if totalNumberOfRebooting <= 3 {
+			} else if totalNumberOfRebooting <= 1 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
 				// if the node was not rebooted more than 3 times, re-enqueue it to process again
-				return ctrl.Result{RequeueAfter: 10*time.Minute}, err
+				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
 			} 
 		}
 
@@ -119,15 +123,26 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if isNodeReady {
 			logger.Info("repair node perform by auto repair controller was ran successfully")
 			return ctrl.Result{}, nil
+		} else {
+			if totalNumberOfRebooting == 0 {
+				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
+				logger.Info("node will be re enqueue and reprocessed after 10 minutes")
+				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
+			} else if totalNumberOfRebooting <= 1 {
+				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
+				// if the node was not rebooted more than 3 times, re-enqueue it to process again
+				logger.Info("node will be re enqueue and reprocessed after 10 minutes")
+				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
+			} 			
 		}
 	}
 
 	//if rebooting does not solve node issue, drain that node 
 	ActorDeleteNode, err := utils.GetAnnotation(r.Clientset, node, "ActorDeleteNode")
-	if err != nil {
-		ActorDeleteNode = "ClusterAutoScaler"
-	}
-	if vcd.GetReplacingPrivilege(r.Clientset) && ActorDeleteNode != "ClusterAutoScaler" {
+	// if err != nil {
+	// 	ActorDeleteNode = "ClusterAutoScaler"
+	// }
+	if vcd.GetReplacingPrivilege(r.Clientset) && ActorDeleteNode != "ClusterAutoScaler" && ActorDeleteNode != "NodeAutoRepair"{
 		log, _ := zap.NewProduction()
 		condition := []string{"Ready"}
 		pf := []draino.PodFilterFunc{draino.MirrorPodFilter}

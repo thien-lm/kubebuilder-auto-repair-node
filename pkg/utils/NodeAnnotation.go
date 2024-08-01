@@ -37,11 +37,11 @@ func RemoveAnnotation(clientSet kubernetes.Interface , node *core.Node, annotati
 
 	delete(currentNodeStatus.Annotations, annotationKey)
 	_, err := clientSet.CoreV1().Nodes().Update(context.Background(), currentNodeStatus, metav1.UpdateOptions{})
-	logger.Info("removed  annotation for this node")
 	if err != nil {
 		logger.Info("can not remove annotation for this node")
 		panic(err)
 	}
+	logger.Info("removed  annotation for this node")
 	return nil
 }
 
@@ -54,7 +54,6 @@ func GetAnnotation(clientSet kubernetes.Interface , node *core.Node, annotationK
 	nodeAnnotation, ok := currentNodeStatus.Annotations[annotationKey]
 
 	if !ok {
-		logger.Info("can not get annotation from this node")
 		return "", errors.New("can not get annotation")
 	}
 

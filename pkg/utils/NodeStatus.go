@@ -21,7 +21,6 @@ func GetNodeStatus(node *core.Node) bool {
 //checking status of node continuously
 func CheckNodeReadyStatusAfterRepairing(node *core.Node, clientSet kubernetes.Interface) bool {
 	logger.Info("Rebooted node in infrastructure, waiting for Ready state in kubernetes")
-	fmt.Println("Rebooted node in infrastructure, waiting for Ready state in kubernetes")
 	maxRetry := 10
 	retryDuration := 15 * time.Second
 	//retryCount := 0
@@ -29,7 +28,6 @@ func CheckNodeReadyStatusAfterRepairing(node *core.Node, clientSet kubernetes.In
 		newNodeState, err := clientSet.CoreV1().Nodes().Get(ctx.Background(), node.Name, metav1.GetOptions{}) 
 		if err != nil {
 			logger.Info("node not found")
-			fmt.Println("node not found")
 			return false
 		}
 		for _, condition := range newNodeState.Status.Conditions {
@@ -41,7 +39,6 @@ func CheckNodeReadyStatusAfterRepairing(node *core.Node, clientSet kubernetes.In
 			}
 	}
 	logger.Info("can not determine if node is healthy, retry after 10 seconds")
-	fmt.Println("can not determine if node is healthy, retry after 10 seconds")
 	time.Sleep(retryDuration)
 	}
 	return false
