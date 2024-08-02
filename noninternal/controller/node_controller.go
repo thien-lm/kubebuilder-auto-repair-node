@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/thien-lm/node-autorepair/pkg/draino"
 	"github.com/thien-lm/node-autorepair/pkg/utils"
 	"github.com/thien-lm/node-autorepair/pkg/vcd"
@@ -196,7 +196,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		domainAPI := utils.GetDomainApiConformEnv(callbackURL)
 		clusterIDPortal := utils.GetClusterID(r.Clientset)
 		idCluster := utils.GetIDCluster(domainAPI, vpcID, accessToken, clusterIDPortal)
-		fmt.Println("access token: ", accessToken, "vpc: ", vpcID, "callbackURL", callbackURL, "domainAPI", domainAPI, "clusteridPortal", clusterIDPortal , "id cluster", idCluster)
+		// fmt.Println("access token: ", accessToken, "vpc: ", vpcID, "callbackURL", callbackURL, "domainAPI", domainAPI, "clusteridPortal", clusterIDPortal , "id cluster", idCluster)
 		//if it is not out of timeout or status on portal is scaling, re enqueue it to check later
 		if !utils.CheckStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) || ActorDeleteNode == "NodeAutoRepair" {
 			logger.Info("Waiting for node to be deleted by Cluster Auto Scaler(sometime Node Auto Repair), re-check this node after 10 minutes")
@@ -208,11 +208,19 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
 			if !status {
+				// node was removed
+				err := utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
+				if err != nil {
+					logger.Info("node was not in cluster anymore")
+					return ctrl.Result{}, nil
+				}
+			}
+			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
 				logger.Info("Failed to handle this node")
 				return ctrl.Result{}, nil
-			}
+			} 	
 		}
 
 		// if cluster autoscaler failed to replace node, remove it manually, the portal will be in ERROR state
@@ -220,12 +228,20 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
+			if !status {
+				// node was removed
+				err := utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
+				if err != nil {
+					logger.Info("node was not in cluster anymore")
+					return ctrl.Result{}, nil
+				}
+			}
 			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
 				logger.Info("Failed to handle this node")
 				return ctrl.Result{}, nil
-			}			
+			} 	
 		}
 	}
 	//het cuu node
