@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/thien-lm/node-autorepair/pkg/draino"
 	"github.com/thien-lm/node-autorepair/pkg/utils"
 	"github.com/thien-lm/node-autorepair/pkg/vcd"
