@@ -187,8 +187,8 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// if node can not be resolved by cluster autoscaler,remove it manually by manual scale down API
 	AutoRepairStatus, err := utils.GetAnnotation(r.Clientset, node, "AutoRepairStatus")
 	if vcd.GetReplacingPrivilege(r.Clientset) && ActorDeleteNode == "ClusterAutoScaler" && (AutoRepairStatus != "NodeAutoRepairFailedToResolveNode" && err != nil) {
-		maxAutoScalerNode := vcd.GetMaxSize(r.Clientset)
-		minAutoScalerNode := vcd.GetMinSize(r.Clientset)
+		// maxAutoScalerNode := vcd.GetMaxSize(r.Clientset)
+		// minAutoScalerNode := vcd.GetMinSize(r.Clientset)
 		accessToken := vcd.GetAccessToken(r.Clientset)
 		vpcID := vcd.GetVPCId(r.Clientset)
 		callbackURL := vcd.GetCallBackURL(r.Clientset)
@@ -221,9 +221,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		// 		return ctrl.Result{}, nil
 		// 	} 	
 		// }
-
+		
 		// if cluster autoscaler failed to replace node, remove it manually, the portal will be in ERROR state
 		if  utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+			logger.Info("the node will be deleted by node auto repair")
 			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
