@@ -293,5 +293,4 @@ spec:
           effect: "NoSchedule"
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
-      serviceAccountName: auto-repair-controller
 
