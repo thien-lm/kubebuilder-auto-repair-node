@@ -7,6 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/stretchr/testify v1.9.0
+	github.com/thien-lm/node-autorepair v0.0.0-20240802030454-ea7ef06ff145
 	go.opencensus.io v0.24.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
@@ -23,7 +24,6 @@ require (
 	github.com/peterhellberg/link v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
-	github.com/thien-lm/node-autorepair v0.0.0-20240802030454-ea7ef06ff145 // indirect
 )
 
 require (
