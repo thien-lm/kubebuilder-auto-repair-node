@@ -181,12 +181,12 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		clusterIDPortal := utils.GetClusterID(r.Clientset)
 		idCluster := utils.GetIDCluster(domainAPI, vpcID, accessToken, clusterIDPortal)
 		//if it is not out of timeout or status on portal is scaling, re enqueue it to check later
-		if !utils.CheckStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
-			return ctrl.Result{RequeueAfter: 10*time.Minute}, nil
+		if !utils.CheckStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) || ActorDeleteNode == "NodeAutoRepair" {
+			return ctrl.Result{RequeueAfter: 5*time.Minute}, nil
 		}
-		//if node auto-repair was disabled, just delete drained node, then cluster autoscaler will scale up cluster again
-		if maxAutoScalerNode == minAutoScalerNode {
-			utils.AddAnnotationForNode(r.Clientset, node, "ActorPerformDeletion", "NodeAutoRepair")
+		//if node auto-repair was disabled, just delete drained node, then cluster autoscaler will scale up cluster again, the portal need to be in SUCCESS state
+		if maxAutoScalerNode == minAutoScalerNode && utils.CheckSucceedStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
 			if !status {
@@ -194,6 +194,18 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				//forget the event => het cuu node
 				return ctrl.Result{}, nil
 			}
+		}
+
+		// if cluster autoscaler failed to replace node, remove it manually, the portal will be in ERROR state
+		if maxAutoScalerNode > minAutoScalerNode &&  utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
+			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
+			time.Sleep(20 * time.Second)
+			if !status {
+				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
+				//forget the event => het cuu node
+				return ctrl.Result{}, nil
+			}			
 		}
 	}
 	//het cuu node

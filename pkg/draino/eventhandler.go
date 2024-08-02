@@ -265,13 +265,13 @@ func (h *DrainingResourceEventHandler) uncordon(n *core.Node) {
 	if err := h.cordonDrainer.Uncordon(n, removeAnnotationMutator); err != nil {
 		log.Info("Failed to uncordon", zap.Error(err))
 		tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultFailed)) // nolint:gosec
-		stats.Record(tags, MeasureNodesUncordoned.M(1))
+		// stats.Record(tags, MeasureNodesUncordoned.M(1))
 		h.eventRecorder.Eventf(nr, core.EventTypeWarning, eventReasonUncordonFailed, "Uncordoning failed: %v", err)
 		return
 	}
 	log.Info("Uncordoned")
 	tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultSucceeded)) // nolint:gosec
-	stats.Record(tags, MeasureNodesUncordoned.M(1))
+	// stats.Record(tags, MeasureNodesUncordoned.M(1))
 	h.eventRecorder.Event(nr, core.EventTypeWarning, eventReasonUncordonSucceeded, "Uncordoned node")
 }
 
@@ -293,13 +293,13 @@ func (h *DrainingResourceEventHandler) cordon(n *core.Node, badConditions []Supp
 	if err := h.cordonDrainer.Cordon(n, conditionAnnotationMutator(badConditions)); err != nil {
 		log.Info("Failed to cordon", zap.Error(err))
 		tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultFailed)) // nolint:gosec
-		stats.Record(tags, MeasureNodesCordoned.M(1))
+		// stats.Record(tags, MeasureNodesCordoned.M(1))
 		h.eventRecorder.Eventf(nr, core.EventTypeWarning, eventReasonCordonFailed, "Cordoning failed: %v", err)
 		return
 	}
 	log.Info("Cordoned")
 	tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultSucceeded)) // nolint:gosec
-	stats.Record(tags, MeasureNodesCordoned.M(1))
+	// stats.Record(tags, MeasureNodesCordoned.M(1))
 	h.eventRecorder.Event(nr, core.EventTypeWarning, eventReasonCordonSucceeded, "Cordoned node")
 }
 
@@ -335,7 +335,7 @@ func (h *DrainingResourceEventHandler) scheduleDrain(n *core.Node) {
 	}
 	log.Info("Drain scheduled ", zap.Time("after", when))
 	tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultSucceeded)) // nolint:gosec
-	stats.Record(tags, MeasureNodesDrainScheduled.M(1))
+	// stats.Record(tags, MeasureNodesDrainScheduled.M(1))
 	h.eventRecorder.Eventf(nr, core.EventTypeWarning, eventReasonDrainScheduled, "Will drain node after %s", when.Format(time.RFC3339Nano))
 }
 
