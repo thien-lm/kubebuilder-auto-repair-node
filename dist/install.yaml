@@ -293,4 +293,13 @@ spec:
           effect: "NoSchedule"
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
+--- 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auto-repair-configmap
+  namespace: kube-system
+data:
+  enable_replacing_node: "true"
+  enable_rebooting_node: "false"
 
