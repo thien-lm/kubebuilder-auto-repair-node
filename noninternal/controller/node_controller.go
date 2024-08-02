@@ -90,7 +90,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// if node is not ready, first reboot node if capable
 	totalNumberOfRebooting :=  utils.CheckTotalNumberOfRebooting(node)
-	if vcd.GetRebootingPrivilege(r.Clientset) && totalNumberOfRebooting <= 3 {
+	if vcd.GetRebootingPrivilege(r.Clientset) && totalNumberOfRebooting < 2 {
 		logger.Info("trying to reboot node: ", "node" , node.Name)
 		//fetch info to access to vmware platform
 		goVcloudClient, org, vdc, err := vcd.CreateGoVCloudClient(r.Clientset)

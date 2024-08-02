@@ -1,4 +1,4 @@
-module github.com/node-autorepair
+module github.com/thien-lm/node-autorepair
 
 go 1.22.0
 
@@ -7,7 +7,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/stretchr/testify v1.9.0
-	github.com/thien-lm/node-autorepair v0.0.0-20240801100028-21549cdc8f9f
 	go.opencensus.io v0.24.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
