@@ -61,7 +61,7 @@ type NodeReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("nodeName", req.Name)
+	logger := log.FromContext(ctx)
 	logger.Info("-----Reconciling node object-----\n")
 
     node := &corev1.Node{}
@@ -78,6 +78,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
     }
 	// node is master node, do nothing
 	if strings.Contains(node.Name, "master") {
+		logger.Info("master node will not be handled by this controller")
 		return ctrl.Result{}, nil
 	}
 	// if node status is fine, just remove it out of queue and remove annotation 
@@ -92,13 +93,15 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	} else {
 		for _, condition := range node.Status.Conditions {
-			if condition.Type == core.NodeReady && condition.Status != core.ConditionTrue {
+			if condition.Type == corev1.NodeReady && condition.Status != corev1.ConditionTrue {
 				lastTransitionTime := condition.LastTransitionTime.Time
 				if time.Since(lastTransitionTime) <= 3*time.Minute  { 
+					logger.Info("node was in not ready state, recheck after 3 minutes")
 					return ctrl.Result{RequeueAfter: 3*time.Minute}, nil
 				}
 			}
 		}
+	}
 	//TODO: if node in not ready state but not more than 3 minutes, add to queue to process again
 	
 	// if node is not ready, first reboot node if capable
@@ -139,12 +142,12 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		} else {
 			if totalNumberOfRebooting == 0 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
-				logger.Info("node will be re enqueue and reprocessed after 10 minutes")
+				logger.Info("rebooted, node will be re enqueue and reprocessed after 10 minutes")
 				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
 			} else if totalNumberOfRebooting <= 1 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
 				// if the node was not rebooted more than 3 times, re-enqueue it to process again
-				logger.Info("node will be re enqueue and reprocessed after 10 minutes")
+				logger.Info("rebooted, node will be re enqueue and reprocessed after 10 minutes")
 				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
 			} 			
 		}
@@ -178,7 +181,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			draino.WithConditionsFilter(condition))
 		utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "ClusterAutoScaler")
 		newDrainer.HandleNode(node)
-
+		logger.Info("Waiting for node to be deleted by Cluster Auto Scaler, re-check this node after 10 minutes")
 		return ctrl.Result{RequeueAfter: 10*time.Minute}, nil
 	}
 
@@ -193,8 +196,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		domainAPI := utils.GetDomainApiConformEnv(callbackURL)
 		clusterIDPortal := utils.GetClusterID(r.Clientset)
 		idCluster := utils.GetIDCluster(domainAPI, vpcID, accessToken, clusterIDPortal)
+		fmt.Println("access token: ", accessToken, "vpc: ", vpcID, "callbackURL", callbackURL, "domainAPI", domainAPI, "clusteridPortal", clusterIDPortal , "id cluster", idCluster)
 		//if it is not out of timeout or status on portal is scaling, re enqueue it to check later
 		if !utils.CheckStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) || ActorDeleteNode == "NodeAutoRepair" {
+			logger.Info("Waiting for node to be deleted by Cluster Auto Scaler(sometime Node Auto Repair), re-check this node after 10 minutes")
 			return ctrl.Result{RequeueAfter: 5*time.Minute}, nil
 		}
 		//if node auto-repair was disabled, just delete drained node, then cluster autoscaler will scale up cluster again, the portal need to be in SUCCESS state
@@ -205,6 +210,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			if !status {
 				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
+				logger.Info("Failed to handle this node")
 				return ctrl.Result{}, nil
 			}
 		}
@@ -217,6 +223,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
+				logger.Info("Failed to handle this node")
 				return ctrl.Result{}, nil
 			}			
 		}
