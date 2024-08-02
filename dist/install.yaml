@@ -255,7 +255,7 @@ spec:
             - --health-probe-bind-address=:8081
           command:
             - /manager
-          image: thienlm204608/auto-repair-controller:v1.0.6
+          image: thienlm204608/auto-repair-controller:v1.0.7
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -286,4 +286,12 @@ spec:
         runAsNonRoot: true
       serviceAccountName: node-autorepair-controller-manager
       terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/control-plane"
+          effect: "NoSchedule"
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      serviceAccountName: auto-repair-controller
 
