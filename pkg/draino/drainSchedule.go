@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.opencensus.io/stats"
+	// "go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 	"go.uber.org/zap"
 	core "k8s.io/api/core/v1"
