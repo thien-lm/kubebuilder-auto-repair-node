@@ -21,12 +21,14 @@ import (
 	pureError "errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/thien-lm/node-autorepair/pkg/draino"
 	"github.com/thien-lm/node-autorepair/pkg/utils"
 	"github.com/thien-lm/node-autorepair/pkg/vcd"
 	"github.com/thien-lm/node-autorepair/pkg/vcd/manipulation"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"go.uber.org/zap"
 )
 
 // NodeReconciler reconciles a Node object
@@ -75,6 +76,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
         logger.Error(err, "Failed to get Node")
         return ctrl.Result{}, err
     }
+	// node is master node, do nothing
+	if strings.Contains(node.Name, "master") {
+		return ctrl.Result{}, nil
+	}
 	// if node status is fine, just remove it out of queue and remove annotation 
 	if !utils.GetNodeStatus(node) {
 		if _,err := utils.GetAnnotation(r.Clientset, node, "RebootingSolvedIssue"); err == nil {
@@ -85,9 +90,17 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		logger.Info("Node status is OK, no need to be handled")
 		return ctrl.Result{}, nil
-	}
+	} else {
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == core.NodeReady && condition.Status != core.ConditionTrue {
+				lastTransitionTime := condition.LastTransitionTime.Time
+				if time.Since(lastTransitionTime) <= 3*time.Minute  { 
+					return ctrl.Result{RequeueAfter: 3*time.Minute}, nil
+				}
+			}
+		}
 	//TODO: if node in not ready state but not more than 3 minutes, add to queue to process again
-
+	
 	// if node is not ready, first reboot node if capable
 	totalNumberOfRebooting :=  utils.CheckTotalNumberOfRebooting(node)
 	if vcd.GetRebootingPrivilege(r.Clientset) && totalNumberOfRebooting < 2 {
