@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: thienlm204608/auto-repair-controller
-  newTag: v1.0.5
+  newTag: v1.0.6

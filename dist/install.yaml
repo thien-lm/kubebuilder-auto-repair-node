@@ -209,7 +209,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: thienlm204608/auto-repair-controller:v1.0.5
+        image: thienlm204608/auto-repair-controller:v1.0.6
         livenessProbe:
           httpGet:
             path: /healthz
