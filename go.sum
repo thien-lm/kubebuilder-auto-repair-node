@@ -166,6 +166,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/thien-lm/node-autorepair v0.0.0-20240802022030-27a9c5d72736 h1:iNT849d0ufSTvA2Gzyz7F/j7ur0AEKaDwbE9HvaWeXg=
+github.com/thien-lm/node-autorepair v0.0.0-20240802022030-27a9c5d72736/go.mod h1:iHbcX12oQlrOKhIxonITjfzYERaXPHWdRP240KyI5Zo=
 github.com/vmware/go-vcloud-director/v2 v2.25.0 h1:RcJ5FQRku3FvQktTi8YOZsRfvhfLm315Cme50M9x9MQ=
 github.com/vmware/go-vcloud-director/v2 v2.25.0/go.mod h1:7Of1qJja+LLNKVegjZG7uuhhy6xgGg3q7Fkw2CEP+Tw=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

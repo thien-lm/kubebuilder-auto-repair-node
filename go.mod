@@ -1,4 +1,4 @@
-module github.com/thien-lm/node-autorepair
+module thien-lm/node-autorepair
 
 go 1.22.0
 
@@ -23,6 +23,7 @@ require (
 	github.com/peterhellberg/link v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
+	github.com/thien-lm/node-autorepair v0.0.0-20240802022030-27a9c5d72736 // indirect
 )
 
 require (
