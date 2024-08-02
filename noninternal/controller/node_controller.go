@@ -223,7 +223,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		// }
 
 		// if cluster autoscaler failed to replace node, remove it manually, the portal will be in ERROR state
-		if maxAutoScalerNode > minAutoScalerNode &&  utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+		if  utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
