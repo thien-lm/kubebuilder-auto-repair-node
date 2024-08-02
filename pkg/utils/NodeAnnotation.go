@@ -66,7 +66,7 @@ func CheckTotalNumberOfRebooting(node *core.Node) int {
 	nodeAnnotation, ok := node.Annotations[annotationKey]
 
 	if !ok {
-		logger.Info("can not get annotation from this node")
+		logger.Info("can not get rebooting annotation from this node")
 		return 0
 	}
 	totalNumberOfRebooting,_ := strconv.Atoi(nodeAnnotation)
