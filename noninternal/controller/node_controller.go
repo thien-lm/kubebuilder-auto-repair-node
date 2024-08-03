@@ -228,15 +228,12 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
 			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
 			time.Sleep(20 * time.Second)
-			if !status {
-				// node was removed
+			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 				err := utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				if err != nil {
 					logger.Info("node was not in cluster anymore")
 					return ctrl.Result{}, nil
 				}
-			}
-			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
 				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
 				logger.Info("Failed to handle this node")
