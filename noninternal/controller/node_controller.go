@@ -105,7 +105,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	
 	// if node is not ready, first reboot node if capable
 	totalNumberOfRebooting :=  utils.CheckTotalNumberOfRebooting(node)
-	if vcd.GetRebootingPrivilege(r.Clientset) && totalNumberOfRebooting < 2 {
+	if vcd.GetRebootingPrivilege(r.Clientset) && totalNumberOfRebooting <= 2 {
 		logger.Info("trying to reboot node: ", "node" , node.Name)
 		//fetch info to access to vmware platform
 		goVcloudClient, org, vdc, err := vcd.CreateGoVCloudClient(r.Clientset)
@@ -113,25 +113,27 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			logger.Error(pureError.New("failed to connect"), "failed to connect to vcd")
 			//if the total number times of rebooting is > 3, does not reboot node anymore
-			if totalNumberOfRebooting == 0 {
-				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
-			} else if totalNumberOfRebooting <= 1 {
-				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
-				// if the node was not rebooted more than 3 times, re-enqueue it to process again
-				return ctrl.Result{RequeueAfter: 10*time.Minute}, err
-			} 
+			// if totalNumberOfRebooting == 0 {
+			// 	utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
+			// } else if totalNumberOfRebooting <= 2 {
+			// 	utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
+			// 	// if the node was not rebooted more than 3 times, re-enqueue it to process again
+			// 	return ctrl.Result{RequeueAfter: 10*time.Minute}, err
+			// } 
+			return ctrl.Result{RequeueAfter: 10*time.Minute}, err
 		}
 		//reboot vm in infra
 		err2 := manipulation.RebootVM(goVcloudClient, org, vdc, node.Name)
 		if err2 != nil {
-			logger.Error(pureError.New("failed to handle"), "failed to handle not ready node")
-			if totalNumberOfRebooting == 0 {
-				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
-			} else if totalNumberOfRebooting <= 1 {
-				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
-				// if the node was not rebooted more than 3 times, re-enqueue it to process again
-				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
-			} 
+			logger.Error(pureError.New("failed to reboot"), "failed to reboot node")
+			// if totalNumberOfRebooting == 0 {
+			// 	utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
+			// } else if totalNumberOfRebooting <= 2 {
+			// 	utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
+			// 	// if the node was not rebooted more than 3 times, re-enqueue it to process again
+			// 	return ctrl.Result{RequeueAfter: 5*time.Minute}, err
+			// } 
+			return ctrl.Result{RequeueAfter: 5*time.Minute}, err
 		}
 
 		isNodeReady := utils.CheckNodeReadyStatusAfterRepairing(node, r.Clientset)
