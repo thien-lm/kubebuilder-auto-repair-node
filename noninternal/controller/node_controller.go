@@ -161,10 +161,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		log, _ := zap.NewProduction()
 		condition := []string{"Ready"}
 		pf := []draino.PodFilterFunc{draino.MirrorPodFilter}
-		pf = append(pf, draino.LocalStoragePodFilter)
-		pf = append(pf, draino.UnreplicatedPodFilter)
-		pf = append(pf, draino.NewDaemonSetPodFilter(r.Clientset))
-		pf = append(pf, draino.NewStatefulSetPodFilter(r.Clientset))
+		// pf = append(pf, draino.LocalStoragePodFilter)
+		// pf = append(pf, draino.UnreplicatedPodFilter)
+		// pf = append(pf, draino.NewDaemonSetPodFilter(r.Clientset))
+		// pf = append(pf, draino.NewStatefulSetPodFilter(r.Clientset))
 		
 		newDrainer := draino.NewDrainingResourceEventHandler(r.Clientset,
 			draino.NewAPICordonDrainer(r.Clientset,
@@ -234,7 +234,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 					logger.Info("node was not in cluster anymore")
 					return ctrl.Result{}, nil
 				}
-				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
 				//forget the event => het cuu node
 				logger.Info("Failed to handle this node")
 				return ctrl.Result{}, nil
