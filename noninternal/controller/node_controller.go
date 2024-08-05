@@ -61,7 +61,6 @@ type NodeReconciler struct {
 
 func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("-----Reconciling node object-----\n")
 
     node := &corev1.Node{}
     err := r.Get(ctx, req.NamespacedName, node)
@@ -77,7 +76,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
     }
 	// node is master node, do nothing
 	if strings.Contains(node.Name, "master") {
-		logger.Info("master node will not be handled by this controller")
+		// logger.Info("master node will not be handled by this controller")
 		return ctrl.Result{}, nil
 	}
 	// if node status is fine, just remove it out of queue and remove annotation 
@@ -91,6 +90,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("Node status is OK, no need to be handled")
 		return ctrl.Result{}, nil
 	} else {
+		logger.Info("-----Reconciling node object-----\n")
 		for _, condition := range node.Status.Conditions {
 			if condition.Type == corev1.NodeReady && condition.Status != corev1.ConditionTrue {
 				lastTransitionTime := condition.LastTransitionTime.Time
