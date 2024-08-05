@@ -145,7 +145,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", "1")
 				logger.Info("rebooted, node will be re enqueue and reprocessed after 10 minutes")
 				return ctrl.Result{RequeueAfter: 5*time.Minute}, err
-			} else if totalNumberOfRebooting <= 1 {
+			} else if totalNumberOfRebooting <= 2 {
 				utils.AddAnnotationForNode(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair", strconv.Itoa(totalNumberOfRebooting + 1))
 				// if the node was not rebooted more than 3 times, re-enqueue it to process again
 				logger.Info("rebooted, node will be re enqueue and reprocessed after 10 minutes")
