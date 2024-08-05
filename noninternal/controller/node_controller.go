@@ -204,25 +204,35 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return ctrl.Result{RequeueAfter: 5*time.Minute}, nil
 		}
 		//if node auto-repair was disabled, just delete drained node, then cluster autoscaler will scale up cluster again, the portal need to be in SUCCESS state
-		// if maxAutoScalerNode == minAutoScalerNode && utils.CheckSucceedStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
-		// 	utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
-		// 	status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
-		// 	time.Sleep(20 * time.Second)
-		// 	if !status {
-		// 		// node was removed
-		// 		err := utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
-		// 		if err != nil {
-		// 			logger.Info("node was not in cluster anymore")
-		// 			return ctrl.Result{}, nil
-		// 		}
-		// 	}
-		// 	if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
-		// 		_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
-		// 		//forget the event => het cuu node
-		// 		logger.Info("Failed to handle this node")
-		// 		return ctrl.Result{}, nil
-		// 	} 	
-		// }
+		if  utils.CheckSucceedStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+			//check if cluster autoscaler was disabled for more than 60 minutes
+			for _, condition := range node.Status.Conditions {
+				if condition.Type == corev1.NodeReady && condition.Status != corev1.ConditionTrue {
+					lastTransitionTime := condition.LastTransitionTime.Time
+					if time.Since(lastTransitionTime) <= 60*time.Minute  { 
+						logger.Info("cluster auto scaler seems disabled on this node, recheck after 10 minutes, if total time is more than 60 minutes, this node will be force-deleted")
+						return ctrl.Result{RequeueAfter: 10*time.Minute}, nil
+					}
+				}
+			}
+			utils.AddAnnotationForNode(r.Clientset, node, "ActorDeleteNode", "NodeAutoRepair")
+			status, _ := utils.ScaleDown(time.Now() , r.Clientset, accessToken, vpcID, idCluster, clusterIDPortal, callbackURL, node.Name)
+			time.Sleep(20 * time.Second)
+			if !status {
+				// node was removed
+				err := utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
+				if err != nil {
+					logger.Info("node was not in cluster anymore")
+					return ctrl.Result{}, nil
+				}
+			}
+			if status && utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
+				_ = utils.AddAnnotationForNode(r.Clientset, node, "AutoRepairStatus", "NodeAutoRepairFailedToResolveNode")
+				//forget the event => het cuu node
+				logger.Info("Failed to handle this node")
+				return ctrl.Result{}, nil
+			} 	
+		}
 		
 		// if cluster autoscaler failed to replace node, remove it manually, the portal will be in ERROR state
 		if  utils.CheckErrorStatusCluster(domainAPI, vpcID, accessToken, clusterIDPortal) {
