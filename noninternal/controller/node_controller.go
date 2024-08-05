@@ -87,7 +87,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if _,err := utils.GetAnnotation(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair"); err == nil {
 			_ = utils.RemoveAnnotation(r.Clientset, node, "TotalNumberOfRebootingByAutoRepair")
 		}
-		logger.Info("Node status is OK, no need to be handled")
+		// logger.Info("Node status is OK, no need to be handled")
 		return ctrl.Result{}, nil
 	} else {
 		logger.Info("-----Reconciling node object-----\n")
