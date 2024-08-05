@@ -32,7 +32,7 @@ func CheckNodeReadyStatusAfterRepairing(node *core.Node, clientSet kubernetes.In
 		}
 		for _, condition := range newNodeState.Status.Conditions {
         	if condition.Type == core.NodeReady && condition.Status == core.ConditionTrue {
-				logger.Info("node is healthy now", "node: ", node.Name)
+				logger.Info("node is healthy now ", "node: ", node.Name)
 				time.Sleep(retryDuration)
             	return true
 			}
